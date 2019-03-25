@@ -16,7 +16,8 @@ import (
 	"github.com/prometheus/prometheus/pkg/timestamp"
 )
 
-const alwaysFireRule = `
+const (
+	alwaysFireRule = `
 groups:
 - name: example
   rules:
@@ -27,24 +28,40 @@ groups:
     annotations:
       summary: "I always complain"
 `
+	alwaysFireStrictRule = `
+partial_response_disabled: true
+groups:
+- name: example
+  rules:
+  - alert: AlwaysStrictFiring
+    expr: vector(1)
+    labels:
+      severity: page
+    annotations:
+      summary: "I always complain, but I don't allow partial response in query.'"
+`
+	)
 
 var (
+	alertsToTest = []string{alwaysFireRule, alwaysFireStrictRule}
+
+	// TODO(bwplotka): Test partial response more by injecting erroring stores at some point.
 	ruleGossipSuite = newSpinupSuite().
 			Add(querier(1, ""), queryCluster(1)).
-			Add(ruler(1, alwaysFireRule)).
-			Add(ruler(2, alwaysFireRule)).
+			Add(ruler(1, alertsToTest)).
+			Add(ruler(2, alertsToTest)).
 			Add(alertManager(1), "")
 
 	ruleStaticFlagsSuite = newSpinupSuite().
 				Add(querierWithStoreFlags(1, "", rulerGRPC(1), rulerGRPC(2)), "").
-				Add(rulerWithQueryFlags(1, alwaysFireRule, queryHTTP(1))).
-				Add(rulerWithQueryFlags(2, alwaysFireRule, queryHTTP(1))).
+				Add(rulerWithQueryFlags(1, alertsToTest, queryHTTP(1))).
+				Add(rulerWithQueryFlags(2, alertsToTest, queryHTTP(1))).
 				Add(alertManager(1), "")
 
 	ruleFileSDSuite = newSpinupSuite().
 			Add(querierWithFileSD(1, "", rulerGRPC(1), rulerGRPC(2)), "").
-			Add(rulerWithFileSD(1, alwaysFireRule, queryHTTP(1))).
-			Add(rulerWithFileSD(2, alwaysFireRule, queryHTTP(1))).
+			Add(rulerWithFileSD(1, alertsToTest, queryHTTP(1))).
+			Add(rulerWithFileSD(2, alertsToTest, queryHTTP(1))).
 			Add(alertManager(1), "")
 )
 
@@ -103,6 +120,20 @@ func testRuleComponent(t *testing.T, conf testConfig) {
 			"alertstate": "firing",
 			"replica":    "2",
 		},
+		{
+			"__name__":   "ALERTS",
+			"severity":   "page",
+			"alertname":  "AlwaysStrictFiring",
+			"alertstate": "firing",
+			"replica":    "1",
+		},
+		{
+			"__name__":   "ALERTS",
+			"severity":   "page",
+			"alertname":  "AlwaysStrictFiring",
+			"alertstate": "firing",
+			"replica":    "2",
+		},
 	}
 	expAlertLabels := []model.LabelSet{
 		{
@@ -113,6 +144,16 @@ func testRuleComponent(t *testing.T, conf testConfig) {
 		{
 			"severity":  "page",
 			"alertname": "AlwaysFiring",
+			"replica":   "2",
+		},
+		{
+			"severity":  "page",
+			"alertname": "AlwaysStrictFiring",
+			"replica":   "1",
+		},
+		{
+			"severity":  "page",
+			"alertname": "AlwaysStrictFiring",
 			"replica":   "2",
 		},
 	}
@@ -146,12 +187,13 @@ func testRuleComponent(t *testing.T, conf testConfig) {
 				return errors.Errorf("unexpected value %f", r.Value)
 			}
 		}
+
 		// A notification must be sent to Alertmanager.
 		alrts, err := queryAlertmanagerAlerts(ctx, "http://localhost:29093")
 		if err != nil {
 			return err
 		}
-		if len(alrts) != 2 {
+		if len(alrts) != len(expAlertLabels) {
 			return errors.Errorf("unexpected alerts length %d", len(alrts))
 		}
 		for i, a := range alrts {

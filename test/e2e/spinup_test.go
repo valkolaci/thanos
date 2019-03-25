@@ -251,16 +251,18 @@ receivers:
 	}
 }
 
-func ruler(i int, rules string) (cmdScheduleFunc, string) {
+func ruler(i int, rules []string) (cmdScheduleFunc, string) {
 	return func(workDir string, clusterPeerFlags []string) ([]*exec.Cmd, error) {
 		dbDir := fmt.Sprintf("%s/data/rule%d", workDir, i)
 
 		if err := os.MkdirAll(dbDir, 0777); err != nil {
-			return nil, errors.Wrap(err, "creating ruler dir failed")
+			return nil, errors.Wrap(err, "creating ruler dir")
 		}
-		err := ioutil.WriteFile(dbDir+"/rules.yaml", []byte(rules), 0666)
-		if err != nil {
-			return nil, errors.Wrap(err, "creating ruler file failed")
+
+		for i, rule := range rules {
+			if err := ioutil.WriteFile(path.Join(dbDir, fmt.Sprintf("/rules-%d.yaml", i)), []byte(rule), 0666); err != nil {
+				return nil, errors.Wrapf(err, "writing rule %s", path.Join(dbDir, fmt.Sprintf("/rules-%d.yaml", i)))
+			}
 		}
 
 		args := append(defaultRulerFlags(i, dbDir),
@@ -273,16 +275,17 @@ func ruler(i int, rules string) (cmdScheduleFunc, string) {
 	}, rulerCluster(i)
 }
 
-func rulerWithQueryFlags(i int, rules string, queryAddresses ...string) (cmdScheduleFunc, string) {
+func rulerWithQueryFlags(i int, rules []string, queryAddresses ...string) (cmdScheduleFunc, string) {
 	return func(workDir string, clusterPeerFlags []string) ([]*exec.Cmd, error) {
 		dbDir := fmt.Sprintf("%s/data/rule%d", workDir, i)
 
 		if err := os.MkdirAll(dbDir, 0777); err != nil {
-			return nil, errors.Wrap(err, "creating ruler dir failed")
+			return nil, errors.Wrap(err, "creating ruler dir")
 		}
-		err := ioutil.WriteFile(dbDir+"/rules.yaml", []byte(rules), 0666)
-		if err != nil {
-			return nil, errors.Wrap(err, "creating ruler file failed")
+		for i, rule := range rules {
+			if err := ioutil.WriteFile(path.Join(dbDir, fmt.Sprintf("/rules-%d.yaml", i)), []byte(rule), 0666); err != nil {
+				return nil, errors.Wrapf(err, "writing rule %s", path.Join(dbDir, fmt.Sprintf("/rules-%d.yaml", i)))
+			}
 		}
 
 		args := defaultRulerFlags(i, dbDir)
@@ -296,25 +299,26 @@ func rulerWithQueryFlags(i int, rules string, queryAddresses ...string) (cmdSche
 	}, ""
 }
 
-func rulerWithFileSD(i int, rules string, queryAddresses ...string) (cmdScheduleFunc, string) {
+func rulerWithFileSD(i int, rules []string, queryAddresses ...string) (cmdScheduleFunc, string) {
 	return func(workDir string, clusterPeerFlags []string) ([]*exec.Cmd, error) {
 		dbDir := fmt.Sprintf("%s/data/rule%d", workDir, i)
 
 		if err := os.MkdirAll(dbDir, 0777); err != nil {
-			return nil, errors.Wrap(err, "creating ruler dir failed")
+			return nil, errors.Wrap(err, "creating ruler dir")
 		}
-		err := ioutil.WriteFile(dbDir+"/rules.yaml", []byte(rules), 0666)
-		if err != nil {
-			return nil, errors.Wrap(err, "creating ruler file failed")
+		for i, rule := range rules {
+			if err := ioutil.WriteFile(path.Join(dbDir, fmt.Sprintf("/rules-%d.yaml", i)), []byte(rule), 0666); err != nil {
+				return nil, errors.Wrapf(err, "writing rule %s", path.Join(dbDir, fmt.Sprintf("/rules-%d.yaml", i)))
+			}
 		}
 
 		ruleFileSDDir := fmt.Sprintf("%s/data/ruleFileSd%d", workDir, i)
 		if err := os.MkdirAll(ruleFileSDDir, 0777); err != nil {
-			return nil, errors.Wrap(err, "create ruler filesd dir failed")
+			return nil, errors.Wrap(err, "create ruler filesd dir")
 		}
 
 		if err := ioutil.WriteFile(ruleFileSDDir+"/filesd.json", []byte(generateFileSD(queryAddresses)), 0666); err != nil {
-			return nil, errors.Wrap(err, "creating ruler filesd config failed")
+			return nil, errors.Wrap(err, "creating ruler filesd config")
 		}
 
 		args := append(defaultRulerFlags(i, dbDir),
