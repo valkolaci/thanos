@@ -8,7 +8,7 @@ menu: components
 
 The query component implements the Prometheus HTTP v1 API to query data in a Thanos cluster via PromQL.
 
-It gathers the data needed to evaluate the query from underlying StoreAPIs. See [here](https://github.com/improbable-eng/thanos/tree/e47eba19ded12533f62c80242345b593a2aa2299/docs/docs/service_discovery.md)
+It gathers the data needed to evaluate the query from underlying StoreAPIs. See [here](https://github.com/improbable-eng/thanos/tree/03a3209c3a951f84a6be97d73f03b2e6614e9a45/docs/docs/service_discovery.md)
 on how to connect querier with desired StoreAPIs.
 
 Querier currently is fully stateless and horizontally scalable.
