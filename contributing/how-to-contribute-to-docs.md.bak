@@ -44,7 +44,7 @@ Or absolute path to the project repository if you want to link to exact commit e
 
 `[title](../ /Makefile )`
 
-Small [post processing script](https://github.com/improbable-eng/thanos/tree/768146f1255005b0ab70b9a335ab07b32540b044/docs/scripts/websitepreprocess.sh) adjusts link for Hugo rendering.
+Small [post processing script](https://github.com/improbable-eng/thanos/tree/e47eba19ded12533f62c80242345b593a2aa2299/docs/scripts/websitepreprocess.sh) adjusts link for Hugo rendering.
 
 NOTE: Spaces matters so: `[xxx](../ link` and `[xxx] (link` will not work.
 

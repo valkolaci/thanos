@@ -64,7 +64,7 @@ Thanos bases itself on vanilla [Prometheus](https://prometheus.io/) (v2.2.1+).
 
 Here's the Prometheus' versions Thanos is tested against:
 
-[Makefile](https://github.com/improbable-eng/thanos/tree/768146f1255005b0ab70b9a335ab07b32540b044/docs/Makefile#35)
+[Makefile](https://github.com/improbable-eng/thanos/tree/e47eba19ded12533f62c80242345b593a2aa2299/docs/Makefile#35)
 
 ## Components
 
