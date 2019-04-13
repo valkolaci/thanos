@@ -1,0 +1,4 @@
+type: GCS
+config:
+  bucket: ""
+  service_account: ""

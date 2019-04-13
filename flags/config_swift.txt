@@ -1,0 +1,12 @@
+type: SWIFT
+config:
+  auth_url: ""
+  username: ""
+  user_id: ""
+  password: ""
+  domain_id: ""
+  domain_name: ""
+  tenant_id: ""
+  tenant_name: ""
+  region_name: ""
+  container_name: ""
