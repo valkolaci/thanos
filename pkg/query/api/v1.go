@@ -26,13 +26,13 @@ import (
 	"sync"
 	"time"
 
-	"github.com/NYTimes/gziphandler"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 
 	"github.com/go-kit/kit/log"
 	"github.com/improbable-eng/thanos/pkg/query"
 	"github.com/improbable-eng/thanos/pkg/runutil"
 	"github.com/improbable-eng/thanos/pkg/tracing"
-	opentracing "github.com/opentracing/opentracing-go"
+	"github.com/opentracing/opentracing-go"
 	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/common/model"
@@ -105,7 +105,9 @@ type API struct {
 	rangeQueryDuration     prometheus.Histogram
 	enableAutodownsampling bool
 	enablePartialResponse  bool
-	now                    func() time.Time
+	reg                    prometheus.Registerer
+
+	now func() time.Time
 }
 
 // NewAPI returns an initialized API type.
@@ -144,6 +146,7 @@ func NewAPI(
 		rangeQueryDuration:     rangeQueryDuration,
 		enableAutodownsampling: enableAutodownsampling,
 		enablePartialResponse:  enablePartialResponse,
+		reg:                    reg,
 
 		now: time.Now,
 	}
@@ -162,7 +165,11 @@ func (api *API) Register(r *route.Router, tracer opentracing.Tracer, logger log.
 				w.WriteHeader(http.StatusNoContent)
 			}
 		})
-		return prometheus.InstrumentHandler(name, tracing.HTTPMiddleware(tracer, name, logger, gziphandler.GzipHandler(hf)))
+
+		return promhttp.InstrumentMetricHandler(
+			prometheus.WrapRegistererWith(prometheus.Labels{"path": name}, api.reg),
+			http.HandlerFunc(hf),
+		).ServeHTTP
 	}
 
 	r.Options("/*path", instr("options", api.options))
@@ -451,7 +458,7 @@ func (api *API) labelValues(r *http.Request) (interface{}, []error, *ApiError) {
 
 	// TODO(fabxc): add back request context.
 
-	vals, err := q.LabelValues(name)
+	vals, _, err := q.LabelValues(name)
 	if err != nil {
 		return nil, nil, &ApiError{errorExec, err}
 	}
@@ -642,7 +649,7 @@ func (api *API) labelNames(r *http.Request) (interface{}, []error, *ApiError) {
 	}
 	defer runutil.CloseWithLogOnErr(api.logger, q, "queryable labelNames")
 
-	names, err := q.LabelNames()
+	names, _, err := q.LabelNames()
 	if err != nil {
 		return nil, nil, &ApiError{errorExec, err}
 	}

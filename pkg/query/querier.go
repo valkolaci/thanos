@@ -246,37 +246,37 @@ func sortDedupLabels(set []storepb.Series, replicaLabel string) {
 }
 
 // LabelValues returns all potential values for a label name.
-func (q *querier) LabelValues(name string) ([]string, error) {
+func (q *querier) LabelValues(name string) ([]string, storage.Warnings, error) {
 	span, ctx := tracing.StartSpan(q.ctx, "querier_label_values")
 	defer span.Finish()
 
 	resp, err := q.proxy.LabelValues(ctx, &storepb.LabelValuesRequest{Label: name, PartialResponseDisabled: !q.partialResponse})
 	if err != nil {
-		return nil, errors.Wrap(err, "proxy LabelValues()")
+		return nil, nil, errors.Wrap(err, "proxy LabelValues()")
 	}
 
 	for _, w := range resp.Warnings {
 		q.warningReporter(errors.New(w))
 	}
 
-	return resp.Values, nil
+	return resp.Values, nil, nil
 }
 
 // LabelNames returns all the unique label names present in the block in sorted order.
-func (q *querier) LabelNames() ([]string, error) {
+func (q *querier) LabelNames() ([]string, storage.Warnings, error) {
 	span, ctx := tracing.StartSpan(q.ctx, "querier_label_names")
 	defer span.Finish()
 
 	resp, err := q.proxy.LabelNames(ctx, &storepb.LabelNamesRequest{PartialResponseDisabled: !q.partialResponse})
 	if err != nil {
-		return nil, errors.Wrap(err, "proxy LabelNames()")
+		return nil, nil, errors.Wrap(err, "proxy LabelNames()")
 	}
 
 	for _, w := range resp.Warnings {
 		q.warningReporter(errors.New(w))
 	}
 
-	return resp.Names, nil
+	return resp.Names, nil, nil
 }
 
 func (q *querier) Close() error {

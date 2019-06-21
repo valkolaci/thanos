@@ -194,6 +194,7 @@ test-deps:
 	$(foreach ver,$(PROM_VERSIONS),$(call fetch_go_bin_version,github.com/prometheus/prometheus/cmd/prometheus,$(ver)))
 	$(call fetch_go_bin_version,github.com/prometheus/alertmanager/cmd/alertmanager,$(ALERTMANAGER_VERSION))
 	$(call fetch_go_bin_version,github.com/minio/minio,$(MINIO_SERVER_VERSION))
+	$(call fetch_go_bin_version,github.com/bplotka/prometheus/cmd/prometheus,v2.10.0-rr1))
 
 # vet vets the code.
 .PHONY: vet

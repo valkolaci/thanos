@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/prometheus/client_golang/prometheus"
 	"net/http"
 	"net/url"
 	"reflect"
@@ -79,6 +80,7 @@ func (m rulesRetrieverMock) AlertingRules() []thanosrule.AlertingRule {
 		time.Second,
 		labels.Labels{},
 		labels.Labels{},
+		labels.Labels{},
 		true,
 		log.NewNopLogger(),
 	)
@@ -86,6 +88,7 @@ func (m rulesRetrieverMock) AlertingRules() []thanosrule.AlertingRule {
 		"test_metric4",
 		expr2,
 		time.Second,
+		labels.Labels{},
 		labels.Labels{},
 		labels.Labels{},
 		true,
@@ -126,6 +129,7 @@ func TestEndpoints(t *testing.T) {
 		api := NewAPI(
 			nil,
 			algr,
+			prometheus.DefaultRegisterer,
 		)
 		testEndpoints(t, api)
 	})

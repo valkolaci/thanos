@@ -5,12 +5,12 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/NYTimes/gziphandler"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
+
 	"github.com/go-kit/kit/log"
 	qapi "github.com/improbable-eng/thanos/pkg/query/api"
 	thanosrule "github.com/improbable-eng/thanos/pkg/rule"
 	"github.com/improbable-eng/thanos/pkg/store/storepb"
-	"github.com/improbable-eng/thanos/pkg/tracing"
 	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/common/route"
@@ -22,16 +22,19 @@ type API struct {
 	logger        log.Logger
 	now           func() time.Time
 	ruleRetriever RulesRetriever
+	reg           prometheus.Registerer
 }
 
 func NewAPI(
 	logger log.Logger,
+	reg prometheus.Registerer,
 	ruleRetriever RulesRetriever,
 ) *API {
 	return &API{
 		logger:        logger,
 		now:           time.Now,
 		ruleRetriever: ruleRetriever,
+		reg:           reg,
 	}
 }
 
@@ -47,7 +50,10 @@ func (api *API) Register(r *route.Router, tracer opentracing.Tracer, logger log.
 				w.WriteHeader(http.StatusNoContent)
 			}
 		})
-		return prometheus.InstrumentHandler(name, tracing.HTTPMiddleware(tracer, name, logger, gziphandler.GzipHandler(hf)))
+		return promhttp.InstrumentMetricHandler(
+			prometheus.WrapRegistererWith(prometheus.Labels{"path": name}, api.reg),
+			http.HandlerFunc(hf),
+		).ServeHTTP
 	}
 
 	r.Get("/alerts", instr("alerts", api.alerts))

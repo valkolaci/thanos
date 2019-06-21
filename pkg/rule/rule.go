@@ -174,7 +174,8 @@ func (m *Managers) Update(dataDir string, evalInterval time.Duration, files []st
 			errs = append(errs, errors.Errorf("no updater found for %v", s))
 			continue
 		}
-		if err := updater.Update(evalInterval, fs); err != nil {
+		// TODO(bwplotka): Investigate if we should put ext labels here or not.
+		if err := updater.Update(evalInterval, fs, nil); err != nil {
 			errs = append(errs, err)
 			continue
 		}

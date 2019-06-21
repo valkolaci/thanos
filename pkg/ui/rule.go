@@ -10,6 +10,8 @@ import (
 	"sort"
 	"time"
 
+	"github.com/prometheus/client_golang/prometheus/promhttp"
+
 	"github.com/go-kit/kit/log"
 	thanosrule "github.com/improbable-eng/thanos/pkg/rule"
 	"github.com/improbable-eng/thanos/pkg/store/storepb"
@@ -25,14 +27,16 @@ type Rule struct {
 
 	ruleManagers thanosrule.Managers
 	queryURL     string
+	reg          prometheus.Registerer
 }
 
-func NewRuleUI(logger log.Logger, ruleManagers map[storepb.PartialResponseStrategy]*rules.Manager, queryURL string, flagsMap map[string]string) *Rule {
+func NewRuleUI(logger log.Logger, reg prometheus.Registerer, ruleManagers map[storepb.PartialResponseStrategy]*rules.Manager, queryURL string, flagsMap map[string]string) *Rule {
 	return &Rule{
 		BaseUI:       NewBaseUI(logger, "rule_menu.html", ruleTmplFuncs(queryURL)),
 		flagsMap:     flagsMap,
 		ruleManagers: ruleManagers,
 		queryURL:     queryURL,
+		reg:          reg,
 	}
 }
 
@@ -146,7 +150,12 @@ func (ru *Rule) root(w http.ResponseWriter, r *http.Request) {
 }
 
 func (ru *Rule) Register(r *route.Router) {
-	instrf := prometheus.InstrumentHandlerFunc
+	instrf := func(name string, handlerFunc http.HandlerFunc) http.HandlerFunc {
+		return promhttp.InstrumentMetricHandler(
+			prometheus.WrapRegistererWith(prometheus.Labels{"path": name}, ru.reg),
+			http.HandlerFunc(handlerFunc),
+		).ServeHTTP
+	}
 
 	r.Get("/", instrf("root", ru.root))
 	r.Get("/alerts", instrf("alerts", ru.alerts))

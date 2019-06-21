@@ -1,9 +1,11 @@
 module github.com/improbable-eng/thanos
 
+// v2.10.0-rr1
+replace github.com/prometheus/prometheus => github.com/bplotka/prometheus v0.0.0-20190621085242-f7821d582002
+
 require (
 	cloud.google.com/go v0.34.0
 	github.com/Azure/azure-storage-blob-go v0.0.0-20181022225951-5152f14ace1c
-	github.com/NYTimes/gziphandler v1.1.1
 	github.com/armon/go-metrics v0.0.0-20180917152333-f0300d1749da
 	github.com/cespare/xxhash v1.1.0
 	github.com/fatih/structtag v1.0.0
@@ -32,15 +34,14 @@ require (
 	github.com/opentracing/basictracer-go v1.0.0
 	github.com/opentracing/opentracing-go v1.1.0
 	github.com/pkg/errors v0.8.1
-	github.com/prometheus/client_golang v0.9.3-0.20190127221311-3c4408c8b829
-	github.com/prometheus/common v0.4.0
+	github.com/prometheus/client_golang v1.0.0
+	github.com/prometheus/common v0.4.1
 	github.com/prometheus/prometheus v2.9.2+incompatible
 	github.com/prometheus/tsdb v0.8.0
 	github.com/uber-go/atomic v1.4.0 // indirect
 	github.com/uber/jaeger-client-go v2.16.0+incompatible
 	github.com/uber/jaeger-lib v2.0.0+incompatible
 	go.uber.org/atomic v1.4.0 // indirect
-	golang.org/x/net v0.0.0-20190522155817-f3200d17e092
 	golang.org/x/oauth2 v0.0.0-20190226205417-e64efc72b421
 	golang.org/x/sync v0.0.0-20190227155943-e225da77a7e6
 	golang.org/x/text v0.3.1-0.20180807135948-17ff2d5776d2

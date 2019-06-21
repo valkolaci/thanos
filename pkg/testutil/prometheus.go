@@ -28,7 +28,8 @@ import (
 )
 
 const (
-	defaultPrometheusVersion   = "v2.9.2"
+	// From github.com/bplotka/prometheus/cmd/prometheus.
+	defaultPrometheusVersion   = "v2.10.0-rr1"
 	defaultAlertmanagerVersion = "v0.15.2"
 	defaultMinioVersion        = "RELEASE.2018-10-06T00-15-16Z"
 
