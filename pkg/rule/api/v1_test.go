@@ -27,6 +27,7 @@ import (
 	qapi "github.com/thanos-io/thanos/pkg/query/api"
 	thanosrule "github.com/thanos-io/thanos/pkg/rule"
 	"github.com/thanos-io/thanos/pkg/store/storepb"
+	"github.com/thanos-io/thanos/pkg/testutil/testpromcompatibility"
 )
 
 // NewStorage returns a new storage for testing purposes
@@ -193,37 +194,35 @@ func testEndpoints(t *testing.T, api *API) {
 		{
 			endpointFn:   api.rules,
 			endpointName: "rules",
-			response: &RuleDiscovery{
-				RuleGroups: []*RuleGroup{
+			response: &testpromcompatibility.RuleDiscovery{
+				RuleGroups: []*testpromcompatibility.RuleGroup{
 					{
 						Name:                    "grp",
 						File:                    "",
 						Interval:                1,
 						PartialResponseStrategy: "WARN",
-						Rules: []rule{
-							alertingRule{
-								Name:                    "test_metric3",
-								Query:                   "absent(test_metric3) != 1",
-								Duration:                1,
-								Labels:                  labels.Labels{},
-								Annotations:             labels.Labels{},
-								Alerts:                  []*Alert{},
-								Health:                  "unknown",
-								Type:                    "alerting",
-								PartialResponseStrategy: "WARN",
+						Rules: []testpromcompatibility.Rule{
+							testpromcompatibility.AlertingRule{
+								Name:        "test_metric3",
+								Query:       "absent(test_metric3) != 1",
+								Duration:    1,
+								Labels:      labels.Labels{},
+								Annotations: labels.Labels{},
+								Alerts:      []*testpromcompatibility.Alert{},
+								Health:      "unknown",
+								Type:        "alerting",
 							},
-							alertingRule{
-								Name:                    "test_metric4",
-								Query:                   "up == 1",
-								Duration:                1,
-								Labels:                  labels.Labels{},
-								Annotations:             labels.Labels{},
-								Alerts:                  []*Alert{},
-								Health:                  "unknown",
-								Type:                    "alerting",
-								PartialResponseStrategy: "WARN",
+							testpromcompatibility.AlertingRule{
+								Name:        "test_metric4",
+								Query:       "up == 1",
+								Duration:    1,
+								Labels:      labels.Labels{},
+								Annotations: labels.Labels{},
+								Alerts:      []*testpromcompatibility.Alert{},
+								Health:      "unknown",
+								Type:        "alerting",
 							},
-							recordingRule{
+							testpromcompatibility.RecordingRule{
 								Name:   "recording-rule-1",
 								Query:  "vector(1)",
 								Labels: labels.Labels{},
