@@ -4,10 +4,9 @@
 syntax = "proto3";
 package thanos;
 
-import "types.proto";
-import "rules.proto";
+import "store/storepb/types.proto";
 import "gogoproto/gogo.proto";
-import "github.com/prometheus/prometheus/prompb/types.proto";
+import "prompb/types.proto";
 
 option go_package = "storepb";
 
@@ -22,7 +21,7 @@ option (gogoproto.goproto_unkeyed_all) = false;
 option (gogoproto.goproto_unrecognized_all) = false;
 option (gogoproto.goproto_sizecache_all) = false;
 
-/// Store reprents API against instance that stores XOR encoded values with label set metadata (e.g Prometheus metrics).
+/// Store represents API against instance that stores XOR encoded values with label set metadata (e.g Prometheus metrics).
 service Store {
   /// Info returns meta information about a store e.g labels that makes that store unique as well as time range that is
   /// available.
@@ -145,32 +144,4 @@ message LabelValuesRequest {
 message LabelValuesResponse {
   repeated string values   = 1;
   repeated string warnings = 2;
-}
-
-/// Rules represents API that is responsible for gathering rules and their statuses.
-service Rules {
-  /// Rules has info for all rules.
-  /// Returned rules are expected to include external labels.
-  rpc Rules(RulesRequest) returns (stream RulesResponse);
-}
-
-message RulesRequest {
-  enum Type {
-    ALL       = 0;
-    ALERTING  = 1;
-    RECORDING = 2;
-  }
-  Type type = 1;
-  PartialResponseStrategy partial_response_strategy = 2;
-}
-
-message RulesResponse {
-  oneof result {
-    // It is up to server implementation to decide how many of those to put here.
-    RuleGroup group = 1;
-
-    /// warning is considered an information piece in place of series for warning purposes.
-    /// It is used to warn rule API users about suspicious cases or partial response (if enabled).
-    string warning = 2;
-  }
 }

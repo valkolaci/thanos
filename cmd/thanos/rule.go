@@ -39,8 +39,8 @@ import (
 	"github.com/thanos-io/thanos/pkg/prober"
 	"github.com/thanos-io/thanos/pkg/promclient"
 	"github.com/thanos-io/thanos/pkg/query"
-	thanosrule "github.com/thanos-io/thanos/pkg/rule"
-	v1 "github.com/thanos-io/thanos/pkg/rule/api"
+	v1 "github.com/thanos-io/thanos/pkg/rules/api"
+	thanosmanager "github.com/thanos-io/thanos/pkg/rules/manager"
 	"github.com/thanos-io/thanos/pkg/runutil"
 	grpcserver "github.com/thanos-io/thanos/pkg/server/grpc"
 	httpserver "github.com/thanos-io/thanos/pkg/server/http"
@@ -389,7 +389,7 @@ func runRule(
 	// Run rule evaluation and alert notifications.
 	var (
 		alertQ  = alert.NewQueue(logger, reg, 10000, 100, labelsTSDBToProm(lset), alertExcludeLabels)
-		ruleMgr = thanosrule.NewManager(dataDir)
+		ruleMgr = thanosmanager.NewManager(dataDir)
 	)
 	{
 		notify := func(ctx context.Context, expr string, alerts ...*rules.Alert) {

@@ -22,22 +22,28 @@ echo "installing gogofast"
 GO111MODULE=on go install "github.com/gogo/protobuf/protoc-gen-gogofast"
 
 GOGOPROTO_ROOT="$(GO111MODULE=on go list -f '{{ .Dir }}' -m github.com/gogo/protobuf)"
+PROMETHEUS_ROOT="$(GO111MODULE=on go list -f '{{ .Dir }}' -m github.com/prometheus/prometheus)"
+
 GOGOPROTO_PATH="${GOGOPROTO_ROOT}:${GOGOPROTO_ROOT}/protobuf"
+PROMETHEUS_PATH="${PROMETHEUS_ROOT}:${PROMETHEUS_ROOT}/prompb"
 
-DIRS="pkg/store/storepb"
-
+DIRS="store/storepb/ rules/rulespb"
 echo "generating code"
-for dir in ${DIRS}; do
-	pushd ${dir}
-		${PROTOC_BIN} --gogofast_out=plugins=grpc:. \
-		  -I=. \
-			-I="${GOGOPROTO_PATH}" \
-			-I="../../../vendor" \
-			*.proto
+pushd "pkg"
+  for dir in ${DIRS}; do
+    ${PROTOC_BIN} --gogofast_out=plugins=grpc:. \
+      -I=. \
+      -I="${GOGOPROTO_PATH}" \
+      -I="${PROMETHEUS_ROOT}" \
+      ${dir}/*.proto
 
-		sed -i.bak -E 's/import _ \"gogoproto\"//g' *.pb.go
-		sed -i.bak -E 's/_ \"google\/protobuf\"//g' *.pb.go
-		rm -f *.bak
-		${GOIMPORTS_BIN} -w *.pb.go
-	popd
-done
+    pushd ${dir}
+      sed -i.bak -E 's/import _ \"gogoproto\"//g' *.pb.go
+      sed -i.bak -E 's/_ \"google\/protobuf\"//g' *.pb.go
+      sed -i.bak -E 's/\"prompb\"/\"github.com\/prometheus\/prometheus\/prompb\"/g' *.pb.go
+      sed -i.bak -E 's/\"store\/storepb\"/\"github.com\/thanos-io\/thanos\/pkg\/store\/storepb\"/g' *.pb.go
+      rm -f *.bak
+      ${GOIMPORTS_BIN} -w *.pb.go
+    popd
+  done
+popd

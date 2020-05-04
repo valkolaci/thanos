@@ -9,7 +9,6 @@ import (
 	"io"
 	"math"
 	"os"
-	"reflect"
 	"sort"
 	"testing"
 	"time"
@@ -61,7 +60,6 @@ func TestProxyStore_Info(t *testing.T) {
 	q := NewProxyStore(nil,
 		nil,
 		func() []Client { return nil },
-		nil,
 		component.Query,
 		nil, 0*time.Second,
 	)
@@ -422,7 +420,6 @@ func TestProxyStore_Series(t *testing.T) {
 			q := NewProxyStore(nil,
 				nil,
 				func() []Client { return tc.storeAPIs },
-				nil,
 				component.Query,
 				tc.selectorLabels,
 				0*time.Second,
@@ -889,7 +886,6 @@ func TestProxyStore_SeriesSlowStores(t *testing.T) {
 			q := NewProxyStore(nil,
 				nil,
 				func() []Client { return tc.storeAPIs },
-				nil,
 				component.Query,
 				tc.selectorLabels,
 				4*time.Second,
@@ -939,7 +935,6 @@ func TestProxyStore_Series_RequestParamsProxied(t *testing.T) {
 	q := NewProxyStore(nil,
 		nil,
 		func() []Client { return cls },
-		nil,
 		component.Query,
 		nil,
 		0*time.Second,
@@ -1000,7 +995,6 @@ func TestProxyStore_Series_RegressionFillResponseChannel(t *testing.T) {
 	q := NewProxyStore(nil,
 		nil,
 		func() []Client { return cls },
-		nil,
 		component.Query,
 		labels.FromStrings("fed", "a"),
 		0*time.Second,
@@ -1040,7 +1034,6 @@ func TestProxyStore_LabelValues(t *testing.T) {
 	q := NewProxyStore(nil,
 		nil,
 		func() []Client { return cls },
-		nil,
 		component.Query,
 		nil,
 		0*time.Second,
@@ -1145,7 +1138,6 @@ func TestProxyStore_LabelNames(t *testing.T) {
 				nil,
 				nil,
 				func() []Client { return tc.storeAPIs },
-				nil,
 				component.Query,
 				nil,
 				0*time.Second,
@@ -1345,42 +1337,6 @@ func (s *storeSeriesServer) Context() context.Context {
 	return s.ctx
 }
 
-// rulesServer is test gRPC storeAPI series server.
-type rulesServer struct {
-	// This field just exist to pseudo-implement the unused methods of the interface.
-	storepb.Rules_RulesServer
-
-	ctx context.Context
-
-	Groups   []storepb.RuleGroup
-	Warnings []string
-
-	Size int64
-}
-
-func newRulesServer(ctx context.Context) *rulesServer {
-	return &rulesServer{ctx: ctx}
-}
-
-func (s *rulesServer) Send(r *storepb.RulesResponse) error {
-	s.Size += int64(r.Size())
-
-	if r.GetWarning() != "" {
-		s.Warnings = append(s.Warnings, r.GetWarning())
-		return nil
-	}
-
-	if r.GetGroup() == nil {
-		return errors.New("no grup")
-	}
-	s.Groups = append(s.Groups, *r.GetGroup())
-	return nil
-}
-
-func (s *rulesServer) Context() context.Context {
-	return s.ctx
-}
-
 // mockedStoreAPI is test gRPC store API client.
 type mockedStoreAPI struct {
 	RespSeries      []*storepb.SeriesResponse
@@ -1396,7 +1352,7 @@ type mockedStoreAPI struct {
 	LastLabelNamesReq  *storepb.LabelNamesRequest
 }
 
-func (s *mockedStoreAPI) Info(ctx context.Context, req *storepb.InfoRequest, _ ...grpc.CallOption) (*storepb.InfoResponse, error) {
+func (s *mockedStoreAPI) Info(context.Context, *storepb.InfoRequest, ...grpc.CallOption) (*storepb.InfoResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "not implemented")
 }
 
@@ -1406,13 +1362,13 @@ func (s *mockedStoreAPI) Series(ctx context.Context, req *storepb.SeriesRequest,
 	return &StoreSeriesClient{ctx: ctx, respSet: s.RespSeries, respDur: s.RespDuration, slowSeriesIndex: s.SlowSeriesIndex}, s.RespError
 }
 
-func (s *mockedStoreAPI) LabelNames(ctx context.Context, req *storepb.LabelNamesRequest, _ ...grpc.CallOption) (*storepb.LabelNamesResponse, error) {
+func (s *mockedStoreAPI) LabelNames(_ context.Context, req *storepb.LabelNamesRequest, _ ...grpc.CallOption) (*storepb.LabelNamesResponse, error) {
 	s.LastLabelNamesReq = req
 
 	return s.RespLabelNames, s.RespError
 }
 
-func (s *mockedStoreAPI) LabelValues(ctx context.Context, req *storepb.LabelValuesRequest, _ ...grpc.CallOption) (*storepb.LabelValuesResponse, error) {
+func (s *mockedStoreAPI) LabelValues(_ context.Context, req *storepb.LabelValuesRequest, _ ...grpc.CallOption) (*storepb.LabelValuesResponse, error) {
 	s.LastLabelValuesReq = req
 
 	return s.RespLabelValues, s.RespError
@@ -1486,150 +1442,4 @@ func TestMergeLabels(t *testing.T) {
 	sort.Sort(resLabels)
 
 	testutil.Equals(t, expected, resLabels)
-}
-
-func TestDedupGroups(t *testing.T) {
-	for _, tc := range []struct {
-		name         string
-		groups, want []*storepb.RuleGroup
-	}{
-		{
-			name:   "no groups",
-			groups: nil,
-			want:   nil,
-		},
-		{
-			name: "empty group",
-			groups: []*storepb.RuleGroup{
-				{Name: "a"},
-			},
-			want: []*storepb.RuleGroup{
-				{Name: "a"},
-			},
-		},
-		{
-			name: "multiple empty groups",
-			groups: []*storepb.RuleGroup{
-				{Name: "a"},
-				{Name: "b"},
-			},
-			want: []*storepb.RuleGroup{
-				{Name: "a"},
-				{Name: "b"},
-			},
-		},
-		{
-			name: "single group",
-			groups: []*storepb.RuleGroup{
-				{
-					Name: "a",
-					Rules: []*storepb.Rule{
-						storepb.NewRecordingRule(&storepb.RecordingRule{Name: "a1"}),
-						storepb.NewRecordingRule(&storepb.RecordingRule{Name: "a2"}),
-					},
-				},
-			},
-			want: []*storepb.RuleGroup{
-				{
-					Name: "a",
-					Rules: []*storepb.Rule{
-						storepb.NewRecordingRule(&storepb.RecordingRule{Name: "a1"}),
-						storepb.NewRecordingRule(&storepb.RecordingRule{Name: "a2"}),
-					},
-				},
-			},
-		},
-		{
-			name: "separate groups",
-			groups: []*storepb.RuleGroup{
-				{
-					Name: "a",
-					Rules: []*storepb.Rule{
-						storepb.NewRecordingRule(&storepb.RecordingRule{Name: "a1"}),
-						storepb.NewRecordingRule(&storepb.RecordingRule{Name: "a2"}),
-					},
-				},
-				{
-					Name: "b",
-					Rules: []*storepb.Rule{
-						storepb.NewRecordingRule(&storepb.RecordingRule{Name: "b1"}),
-						storepb.NewRecordingRule(&storepb.RecordingRule{Name: "b2"}),
-					},
-				},
-			},
-			want: []*storepb.RuleGroup{
-				{
-					Name: "a",
-					Rules: []*storepb.Rule{
-						storepb.NewRecordingRule(&storepb.RecordingRule{Name: "a1"}),
-						storepb.NewRecordingRule(&storepb.RecordingRule{Name: "a2"}),
-					},
-				},
-				{
-					Name: "b",
-					Rules: []*storepb.Rule{
-						storepb.NewRecordingRule(&storepb.RecordingRule{Name: "b1"}),
-						storepb.NewRecordingRule(&storepb.RecordingRule{Name: "b2"}),
-					},
-				},
-			},
-		},
-		{
-			name: "duplicate groups",
-			groups: []*storepb.RuleGroup{
-				{
-					Name: "a",
-					Rules: []*storepb.Rule{
-						storepb.NewRecordingRule(&storepb.RecordingRule{Name: "a1"}),
-						storepb.NewRecordingRule(&storepb.RecordingRule{Name: "a2"}),
-					},
-				},
-				{
-					Name: "b",
-					Rules: []*storepb.Rule{
-						storepb.NewRecordingRule(&storepb.RecordingRule{Name: "b1"}),
-						storepb.NewRecordingRule(&storepb.RecordingRule{Name: "b2"}),
-					},
-				},
-				{
-					Name: "c",
-				},
-				{
-					Name: "a",
-					Rules: []*storepb.Rule{
-						storepb.NewRecordingRule(&storepb.RecordingRule{Name: "a1"}),
-						storepb.NewRecordingRule(&storepb.RecordingRule{Name: "a2"}),
-					},
-				},
-			},
-			want: []*storepb.RuleGroup{
-				{
-					Name: "a",
-					Rules: []*storepb.Rule{
-						storepb.NewRecordingRule(&storepb.RecordingRule{Name: "a1"}),
-						storepb.NewRecordingRule(&storepb.RecordingRule{Name: "a2"}),
-						storepb.NewRecordingRule(&storepb.RecordingRule{Name: "a1"}),
-						storepb.NewRecordingRule(&storepb.RecordingRule{Name: "a2"}),
-					},
-				},
-				{
-					Name: "b",
-					Rules: []*storepb.Rule{
-						storepb.NewRecordingRule(&storepb.RecordingRule{Name: "b1"}),
-						storepb.NewRecordingRule(&storepb.RecordingRule{Name: "b2"}),
-					},
-				},
-				{
-					Name: "c",
-				},
-			},
-		},
-	} {
-		t.Run(tc.name, func(t *testing.T) {
-			got := dedupGroups(tc.groups)
-			if !reflect.DeepEqual(tc.want, got) {
-				t.Errorf("want groups %v, got %v", tc.want, got)
-			}
-		})
-	}
 }
