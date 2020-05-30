@@ -1,4 +1,4 @@
-# Auto generated binary variables helper managed by https://github.com/bwplotka/bingo v0.1.0.rc.4. DO NOT EDIT.
+# Auto generated binary variables helper managed by https://github.com/bwplotka/bingo v0.1.0. DO NOT EDIT.
 # All tools are designed to be build inside $GOBIN.
 GOBIN ?= $(firstword $(subst :, ,${GOPATH}))/bin
 GO    ?= $(shell which go)
@@ -21,6 +21,13 @@ $(ALERTMANAGER): .bingo/alertmanager.mod
 	@echo "(re)installing $(GOBIN)/alertmanager-v0.20.0"
 	@$(GO) build -modfile=.bingo/alertmanager.mod -o=$(GOBIN)/alertmanager-v0.20.0 "github.com/prometheus/alertmanager/cmd/alertmanager"
 .bingo/alertmanager.mod: ;
+
+BINGO ?= $(GOBIN)/bingo-v0.1.0
+$(BINGO): .bingo/bingo.mod
+	@# Install binary/ries using Go 1.14+ build command. This is using bwplotka/bingo-controlled, separate go module with pinned dependencies.
+	@echo "(re)installing $(GOBIN)/bingo-v0.1.0"
+	@$(GO) build -modfile=.bingo/bingo.mod -o=$(GOBIN)/bingo-v0.1.0 "github.com/bwplotka/bingo"
+.bingo/bingo.mod: ;
 
 EMBEDMD ?= $(GOBIN)/embedmd-v0.0.0-20181127031020-97c13d6e4160
 $(EMBEDMD): .bingo/embedmd.mod
@@ -136,4 +143,11 @@ $(PROMU): .bingo/promu.mod
 	@echo "(re)installing $(GOBIN)/promu-v0.5.0"
 	@$(GO) build -modfile=.bingo/promu.mod -o=$(GOBIN)/promu-v0.5.0 "github.com/prometheus/promu"
 .bingo/promu.mod: ;
+
+PROTOC_GEN_GOGOFAST ?= $(GOBIN)/protoc-gen-gogofast-v1.3.1
+$(PROTOC_GEN_GOGOFAST): .bingo/protoc-gen-gogofast.mod
+	@# Install binary/ries using Go 1.14+ build command. This is using bwplotka/bingo-controlled, separate go module with pinned dependencies.
+	@echo "(re)installing $(GOBIN)/protoc-gen-gogofast-v1.3.1"
+	@$(GO) build -modfile=.bingo/protoc-gen-gogofast.mod -o=$(GOBIN)/protoc-gen-gogofast-v1.3.1 "github.com/gogo/protobuf/protoc-gen-gogofast"
+.bingo/protoc-gen-gogofast.mod: ;
 
