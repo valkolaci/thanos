@@ -157,3 +157,12 @@ func TestClearsDirectoriesFilesProperly(t *testing.T) {
 	_, err = os.Stat(filepath.Join(dir, "01EHBQRN4RF0HSRR1772KW0TN8/"))
 	testutil.Ok(t, err)
 }
+
+func TestDeleteAll_ShouldReturnNoErrorIfDirectoryDoesNotExists(t *testing.T) {
+	dir, err := ioutil.TempDir("", "example")
+	testutil.Ok(t, err)
+	testutil.Ok(t, os.RemoveAll(dir))
+
+	// Calling DeleteAll() on a non-existent directory should return no error.
+	testutil.Ok(t, DeleteAll(dir))
+}
