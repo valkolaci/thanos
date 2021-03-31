@@ -23,16 +23,13 @@ We use _breaking :warning:_ to mark changes that are not backward compatible (re
 
 - [#3204](https://github.com/thanos-io/thanos/pull/3204) Mixin: Use sidecar's metric timestamp for healthcheck.
 - [#3922](https://github.com/thanos-io/thanos/pull/3922) Fix panic in http logging middleware.
-- [#3960](https://github.com/thanos-io/thanos/pull/3960) fix deduplication of equal alerts with different labels
 
 ### Changed
 
 - [#3948](https://github.com/thanos-io/thanos/pull/3948) Receiver: Adjust `http_request_duration_seconds` buckets for low latency requests.
 - [#3856](https://github.com/thanos-io/thanos/pull/3856) Mixin: _breaking :warning:_ Introduce flexible multi-cluster/namespace mode for alerts and dashboards. Removes jobPrefix config option. Removes `namespace` by default.
 
-### Removed
-
-## [v0.19.0-rc.2](https://github.com/thanos-io/thanos/releases/tag/v0.19.0-rc.2) - 2021.03.24
+## [v0.19.0](https://github.com/thanos-io/thanos/releases/tag/v0.19.0) - 2021.03.31
 
 ### Added
 
@@ -57,7 +54,8 @@ We use _breaking :warning:_ to mark changes that are not backward compatible (re
 - [#3815](https://github.com/thanos-io/thanos/pull/3815) Receive: Improve handling of empty time series from clients
 - [#3795](https://github.com/thanos-io/thanos/pull/3795) s3: A truncated "get object" response is reported as error.
 - [#3899](https://github.com/thanos-io/thanos/pull/3899) Receive: Correct the inference of client gRPC configuration.
-- [#3943](https://github.com/thanos-io/thanos/pull/3943): Receive: Fixed memory regression introduced in v0.17.0.
+- [#3943](https://github.com/thanos-io/thanos/pull/3943) Receive: Fixed memory regression introduced in v0.17.0.
+- [#3960](https://github.com/thanos-io/thanos/pull/3960) Query: Fixed deduplication of equal alerts with different labels.
 
 ### Changed
 
