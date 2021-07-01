@@ -10,7 +10,9 @@ import (
 	"math/rand"
 	"os"
 	"path/filepath"
+	"runtime"
 	"testing"
+	"time"
 
 	"github.com/go-kit/kit/log"
 	"github.com/prometheus/prometheus/pkg/labels"
@@ -31,6 +33,7 @@ func TestQuerySelect(t *testing.T) {
 	})
 }
 
+// -test.benchtime 2m -test.benchmem -test.cpuprofile /home/bwplotka/Repos/_dev/thanos/2021/select/opt1-cpu.pprof
 func BenchmarkQuerySelect(b *testing.B) {
 	tb := testutil.NewTB(b)
 	storetestutil.RunSeriesInterestingCases(tb, 10e6, 10e5, func(t testutil.TB, samplesPerSeries, series int) {
@@ -78,19 +81,29 @@ func benchQuerySelect(t testutil.TB, totalSamples, totalSeries int, dedup bool) 
 
 			resps = append(resps, storepb.NewSeriesResponse(created[i]))
 		}
-
 	}
 
 	logger := log.NewNopLogger()
-	q := &querier{
-		ctx:           context.Background(),
-		logger:        logger,
-		proxy:         &mockedStoreServer{responses: resps},
-		replicaLabels: map[string]struct{}{"a_replica": {}},
-		deduplicate:   dedup,
-		selectGate:    gate.NewNoop(),
-	}
+	q := newQuerier(
+		context.Background(),
+		logger,
+		0, 0,
+		[]string{"a_replica"},
+		nil,
+		&mockedStoreServer{responses: resps},
+		true,
+		0,
+		false, false,
+		gate.NewNoop(),
+		1*time.Minute,
+	)
 	testSelect(t, q, expectedSeries)
+
+	if t.IsBenchmark() {
+		runtime.GC()
+		// TODO(bwplotka): Remove after testing.
+		testutil.Ok(t, testutil.WriteHeapProfile(fmt.Sprintf("../../../_dev/thanos/2021/select/opt1-sa%d-se%d.mem.pprof", totalSamples, totalSeries)))
+	}
 }
 
 type mockedStoreServer struct {
@@ -136,25 +149,26 @@ func testSelect(t testutil.TB, q *querier, expectedSeries []labels.Labels) {
 					}
 					testutil.Ok(t, iter.Err())
 				}
-
+				testutil.Ok(t, ss.Err())
 				testutil.Equals(t, len(expectedSeries), gotSeriesCount)
-			} else {
-				// Check more carefully.
-				var gotSeries []labels.Labels
-				for ss.Next() {
-					s := ss.At()
-					gotSeries = append(gotSeries, s.Labels())
+				continue
+			}
 
-					// This is when resource usage should actually start growing.
-					iter := s.Iterator()
-					for iter.Next() {
-						testT, testV = iter.At()
-					}
-					testutil.Ok(t, iter.Err())
+			// Check more carefully.
+			var gotSeries []labels.Labels
+			for ss.Next() {
+				s := ss.At()
+				gotSeries = append(gotSeries, s.Labels())
+
+				// This is when resource usage should actually start growing.
+				iter := s.Iterator()
+				for iter.Next() {
+					testT, testV = iter.At()
 				}
-				testutil.Equals(t, expectedSeries, gotSeries)
+				testutil.Ok(t, iter.Err())
 			}
 			testutil.Ok(t, ss.Err())
+			testutil.Equals(t, expectedSeries, gotSeries)
 		}
 	})
 }
