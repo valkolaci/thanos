@@ -107,7 +107,7 @@ require (
 )
 
 require (
-	github.com/efficientgo/core v1.0.0-rc.0.0.20221201130417-ba593f67d2a4
+	github.com/efficientgo/core v1.0.0-rc.2
 	github.com/minio/sha256-simd v1.0.0
 )
 
@@ -127,7 +127,10 @@ require (
 	go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp v1.11.1
 )
 
-require go.opentelemetry.io/contrib/propagators/autoprop v0.34.0
+require (
+	github.com/google/go-cmp v0.5.9
+	go.opentelemetry.io/contrib/propagators/autoprop v0.34.0
+)
 
 require (
 	cloud.google.com/go/compute/metadata v0.2.1 // indirect
@@ -186,7 +189,6 @@ require (
 	github.com/golang-jwt/jwt v3.2.1+incompatible // indirect
 	github.com/golang-jwt/jwt/v4 v4.4.1 // indirect
 	github.com/google/btree v1.0.1 // indirect
-	github.com/google/go-cmp v0.5.9 // indirect
 	github.com/google/go-querystring v1.1.0 // indirect
 	github.com/google/pprof v0.0.0-20221102093814-76f304f74e5e // indirect
 	github.com/google/uuid v1.3.0 // indirect
